@@ -55,7 +55,7 @@ class _LanguageState extends State<StatefulWidget> {
                 // get the language, saved in the user preferences
                 future: SharedPreferencesHelper.getMapProvider(),
                 initialData:
-                    'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                    'https://server.arcgisonline.com/ArcGIS/rest/services/Polar/Arctic_Imagery/MapServer/tile/{z}/{y}/{x}',
                 builder:
                     (BuildContext context, AsyncSnapshot<String> snapshot) {
                   return snapshot.hasData

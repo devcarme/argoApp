@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map/plugin_api.dart';
 import 'package:latlong/latlong.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:Argo/pages/userpreference.dart';
+import 'package:proj4dart/proj4dart.dart' as proj4;
 
 class MapWidget extends StatefulWidget {
   @override
@@ -27,10 +29,10 @@ class _MapWidgetState extends State<MapWidget> {
     //GETTING DATA FROM CONTEXT
     LoadingScreenArguments args = ModalRoute.of(context).settings.arguments;
     List jsonData = args.jsonData;
-    LatLng center = args.center;
+    LatLng center = LatLng(65.05166470332148, -19.171744826394896);
     DateTime displaydate = args.date;
-    double zoom = args.zoom;
-    var maxZoom = 8.0;
+    double zoom = 3;
+    var maxZoom = 20.0;
     var minZoom = 2.0;
     //Must change zoom to reload map tiles... I don't know why yet, some caching issue
     if (zoom == maxZoom) {
@@ -128,6 +130,53 @@ class _MapWidgetState extends State<MapWidget> {
   }
 
   _setMapContent(center, zoom, minZoom, maxZoom) {
+    var resolutions = <double>[
+      32768,
+      16384,
+      8192,
+      4096,
+      2048,
+      1024,
+      512,
+      256,
+      128
+    ];
+    var maxZoom = (resolutions.length - 1).toDouble();
+
+    // EPSG:3413 is a user-defined projection from a valid Proj4 definition string
+    // From: http://epsg.io/3413, proj definition: http://epsg.io/3413.proj4
+    // Find Projection by name or define it if not exists
+    var epsg3413 = proj4.Projection.add('EPSG:3413',
+        '+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs');
+
+    final epsg3413Bounds = Bounds<double>(
+      const CustomPoint<double>(-4511619.0, -4511336.0),
+      const CustomPoint<double>(4510883.0, 4510996.0),
+    );
+
+    var epsg3413CRS = Proj4Crs.fromFactory(
+      // CRS code
+      code: 'EPSG:3413',
+      // your proj4 delegate
+      proj4Projection: epsg3413,
+      // Resolution factors (projection units per pixel, for example meters/pixel)
+      // for zoom levels; specify either scales or resolutions, not both
+      resolutions: resolutions,
+      // Bounds of the CRS, in projected coordinates
+      // (if not specified, the layer's which uses this CRS will be infinite)
+      bounds: epsg3413Bounds,
+      // Tile origin, in projected coordinates, if set, this overrides the transformation option
+      // Some goeserver changes origin based on zoom level
+      // and some are not at all (use explicit/implicit null or use [CustomPoint(0, 0)])
+      // @see https://github.com/kartena/Proj4Leaflet/pull/171
+      origins: [const CustomPoint(0, 0)],
+      // Scale factors (pixels per projection unit, for example pixels/meter) for zoom levels;
+      // specify either scales or resolutions, not both
+      scales: null,
+      // The transformation to use when transforming projected coordinates into pixel coordinates
+      transformation: null,
+    );
+
     return FutureBuilder<String>(
         // get map provider, saved in the user preferences
         future: SharedPreferencesHelper.getMapProvider(),
@@ -137,6 +186,7 @@ class _MapWidgetState extends State<MapWidget> {
             return FlutterMap(
               mapController: mapController,
               options: MapOptions(
+                crs: epsg3413CRS,
                 center: center,
                 zoom: zoom,
                 interactiveFlags:
@@ -146,12 +196,24 @@ class _MapWidgetState extends State<MapWidget> {
               ),
               layers: [
                 TileLayerOptions(
-                  urlTemplate: snapshot.data,
-                  subdomains: ['a', 'b', 'c'],
+                  // opacity: 1,
+                  backgroundColor: Colors.transparent,
+                  wmsOptions: WMSTileLayerOptions(
+                    // Set the WMS layer's CRS too
+                    crs: epsg3413CRS,
+                    transparent: true,
+                    format: 'image/jpeg',
+                    baseUrl:
+                        //North
+                        'https://www.gebco.net/data_and_products/gebco_web_services/north_polar_view_wms/mapserv?',
+                    layers: ['gebco_north_polar_view'],
+                  ),
                 ),
                 MarkerLayerOptions(markers: _markers),
               ],
             );
+          } else {
+            return null;
           }
         });
   }
