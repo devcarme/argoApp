@@ -28,7 +28,7 @@ class SharedPreferencesHelper {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     //default
     return prefs.getString(_kprovider) ??
-        "https://server.arcgisonline.com/ArcGIS/rest/services/Polar/Arctic_Ocean_Base/MapServer/tile/{z}/{y}/{x}";
+        "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}";
   }
 
   // Method that saves the map provider
@@ -52,6 +52,23 @@ class SharedPreferencesHelper {
   static Future<bool> setlanguage(String value) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.setString(_klanguage, value);
+  }
+
+  // PROJECTION
+  // Instantiation of the SharedPreferences library
+  static final String _kprojection = "projection";
+
+  // Method that returns the saved language
+  static Future<String> getProjection() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    //default english
+    return prefs.getString(_kprojection) ?? "EPSG:3857";
+  }
+
+  // Method that saves the user language
+  static Future<bool> setProjection(String value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString(_kprojection, value);
   }
 
   // WMO LIST

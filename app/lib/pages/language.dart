@@ -24,6 +24,7 @@ class _LanguageState extends State<StatefulWidget> {
         //Future builder : the future parametre will be the user language, and in the builder we will
         //draw the listview depending of language saved in the pref
         body: ListView(padding: const EdgeInsets.all(8), children: <Widget>[
+          //Language
           Container(
             height: 30,
             color: Colors.white,
@@ -43,6 +44,7 @@ class _LanguageState extends State<StatefulWidget> {
                       : Container();
                 }),
           ),
+          //Basemap
           Container(
             height: 30,
             color: Colors.white,
@@ -62,7 +64,26 @@ class _LanguageState extends State<StatefulWidget> {
                       ? _buildProviderList(snapshot.data)
                       : Container();
                 }),
-          )
+          ),
+          //Projection
+          Container(
+            height: 30,
+            color: Colors.white,
+            child: Text('Projection', style: TextStyle(fontSize: 20)),
+          ),
+          Container(
+              height: 200,
+              color: Colors.white,
+              child: FutureBuilder<String>(
+                  // get the language, saved in the user preferences
+                  future: SharedPreferencesHelper.getProjection(),
+                  initialData: 'EPSG:3857',
+                  builder:
+                      (BuildContext context, AsyncSnapshot<String> snapshot) {
+                    return snapshot.hasData
+                        ? _buildProjectionList(snapshot.data)
+                        : Container();
+                  }))
         ]));
   }
 
@@ -190,6 +211,49 @@ class _LanguageState extends State<StatefulWidget> {
                       'https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}');
                   setState(() {});
                 }))
+      ],
+    );
+  }
+
+  Widget _buildProjectionList(String projection) {
+    var icon_mp1 = Icons.radio_button_unchecked;
+    var icon_mp2 = Icons.radio_button_unchecked;
+
+    switch (projection) {
+      case 'EPSG:3857':
+        {
+          icon_mp1 = Icons.radio_button_checked;
+        }
+        break;
+
+      case 'EPSG:3413':
+        {
+          icon_mp2 = Icons.radio_button_checked;
+        }
+        break;
+    }
+
+    return new ListView(
+      padding: const EdgeInsets.all(8),
+      children: <Widget>[
+        ListTile(
+            title: Text('Mercator'),
+            trailing: IconButton(
+                icon: Icon(icon_mp1),
+                onPressed: () {
+                  //set provider & rebuild
+                  SharedPreferencesHelper.setProjection('EPSG:3857');
+                  setState(() {});
+                })),
+        ListTile(
+            title: Text('Arctic'),
+            trailing: IconButton(
+                icon: Icon(icon_mp2),
+                onPressed: () {
+                  //set language & rebuild
+                  SharedPreferencesHelper.setProjection('EPSG:3413');
+                  setState(() {});
+                })),
       ],
     );
   }

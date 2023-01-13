@@ -177,38 +177,53 @@ class _MapWidgetState extends State<MapWidget> {
       transformation: null,
     );
 
+    //Log snapshot data
+
     return FutureBuilder<String>(
         // get map provider, saved in the user preferences
-        future: SharedPreferencesHelper.getMapProvider(),
+        future: SharedPreferencesHelper.getProjection(),
         initialData: ' ',
         builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
           if (snapshot.hasData) {
             return FlutterMap(
               mapController: mapController,
-              options: MapOptions(
-                crs: epsg3413CRS,
-                center: center,
-                zoom: zoom,
-                interactiveFlags:
-                    InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                maxZoom: maxZoom,
-                minZoom: minZoom,
-              ),
+              options: snapshot.data == "EPSG:3413"
+                  ? MapOptions(
+                      crs: epsg3413CRS,
+                      center: center,
+                      zoom: zoom,
+                      interactiveFlags:
+                          InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                      maxZoom: maxZoom,
+                      minZoom: minZoom,
+                    )
+                  : MapOptions(
+                      center: center,
+                      zoom: zoom,
+                      interactiveFlags:
+                          InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+                      maxZoom: 8.0,
+                      minZoom: 2.0,
+                    ),
               layers: [
-                TileLayerOptions(
-                  // opacity: 1,
-                  backgroundColor: Colors.transparent,
-                  wmsOptions: WMSTileLayerOptions(
-                    // Set the WMS layer's CRS too
-                    crs: epsg3413CRS,
-                    transparent: true,
-                    format: 'image/jpeg',
-                    baseUrl:
-                        //North
-                        'https://www.gebco.net/data_and_products/gebco_web_services/north_polar_view_wms/mapserv?',
-                    layers: ['gebco_north_polar_view'],
-                  ),
-                ),
+                snapshot.data == "EPSG:3413"
+                    ? TileLayerOptions(
+                        opacity: 1,
+                        backgroundColor: Colors.transparent,
+                        wmsOptions: WMSTileLayerOptions(
+                          // Set the WMS layer's CRS too
+                          crs: epsg3413CRS,
+                          transparent: true,
+                          format: 'image/jpeg',
+                          baseUrl:
+                              "https://www.gebco.net/data_and_products/gebco_web_services/north_polar_view_wms/mapserv?",
+                          layers: ['gebco_north_polar_view'],
+                        ),
+                      )
+                    : TileLayerOptions(
+                        urlTemplate:
+                            "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+                        subdomains: ['a', 'b', 'c']),
                 MarkerLayerOptions(markers: _markers),
               ],
             );
