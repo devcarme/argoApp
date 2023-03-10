@@ -130,6 +130,7 @@ class _MapWidgetState extends State<MapWidget> {
   }
 
   _setMapContent(center, zoom, minZoom, maxZoom) {
+    //Resolutions for zoom levels
     var resolutions = <double>[
       32768,
       16384,
@@ -177,8 +178,6 @@ class _MapWidgetState extends State<MapWidget> {
       transformation: null,
     );
 
-    //Log snapshot data
-
     return FutureBuilder<String>(
         // get map provider, saved in the user preferences
         future: SharedPreferencesHelper.getProjection(),
@@ -187,6 +186,7 @@ class _MapWidgetState extends State<MapWidget> {
           if (snapshot.hasData) {
             return FlutterMap(
               mapController: mapController,
+              //Map options for polar projection
               options: snapshot.data == "EPSG:3413"
                   ? MapOptions(
                       crs: epsg3413CRS,
@@ -197,6 +197,7 @@ class _MapWidgetState extends State<MapWidget> {
                       maxZoom: maxZoom,
                       minZoom: minZoom,
                     )
+                  //Map options for mercator projection
                   : MapOptions(
                       center: center,
                       zoom: zoom,
@@ -206,24 +207,28 @@ class _MapWidgetState extends State<MapWidget> {
                       minZoom: 2.0,
                     ),
               layers: [
+                //Tile options for polar projection
                 snapshot.data == "EPSG:3413"
                     ? TileLayerOptions(
                         opacity: 1,
                         backgroundColor: Colors.transparent,
                         wmsOptions: WMSTileLayerOptions(
-                          // Set the WMS layer's CRS too
+                          // CRS for polar projection
                           crs: epsg3413CRS,
                           transparent: true,
                           format: 'image/jpeg',
+                          // WMS server url
                           baseUrl:
                               "https://www.gebco.net/data_and_products/gebco_web_services/north_polar_view_wms/mapserv?",
                           layers: ['gebco_north_polar_view'],
                         ),
                       )
+                    //Tile options for mercator projection
                     : TileLayerOptions(
                         urlTemplate:
                             "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}",
                         subdomains: ['a', 'b', 'c']),
+                //Flotter markers list
                 MarkerLayerOptions(markers: _markers),
               ],
             );
